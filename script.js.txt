@@ -1,0 +1,369 @@
+const ROOM_PRICES = {
+  Standard: 1500,
+  Deluxe: 2500,
+  Suite: 4000
+};
+
+const TOTAL_ROOMS = 40;
+const STORAGE_KEY = "ankHotelBookings";
+
+let bookings = [];
+
+try {
+  bookings = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  if (!Array.isArray(bookings)) bookings = [];
+} catch {
+  bookings = [];
+}
+
+const $ = id => document.getElementById(id);
+
+function todayString() {
+  const d = new Date();
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0")
+  ].join("-");
+}
+
+function saveBookings() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+}
+
+function formatMoney(amount) {
+  return "₹" + Number(amount).toLocaleString("en-IN");
+}
+
+function dateValue(value) {
+  return new Date(value + "T00:00:00");
+}
+
+function nightsBetween(start, end) {
+  return Math.round((dateValue(end) - dateValue(start)) / 86400000);
+}
+
+// Check if two reservations overlap.
+// A room can be booked again on the previous guest's checkout date.
+function datesOverlap(start1, end1, start2, end2) {
+  return start1 < end2 && start2 < end1;
+}
+
+function isActiveBooking(booking) {
+  return booking.status !== "Cancelled";
+}
+
+function allocateRoom(roomType, checkin, checkout, excludedId = null) {
+  const rooms = {
+    Standard: Array.from({ length: 20 }, (_, i) => "S" + (101 + i)),
+    Deluxe: Array.from({ length: 12 }, (_, i) => "D" + (201 + i)),
+    Suite: Array.from({ length: 8 }, (_, i) => "L" + (301 + i))
+  };
+
+  const categoryRooms = rooms[roomType] || [];
+
+  for (const roomNumber of categoryRooms) {
+    const conflict = bookings.some(b =>
+      b.id !== excludedId &&
+      isActiveBooking(b) &&
+      b.roomNumber === roomNumber &&
+      datesOverlap(checkin, checkout, b.checkin, b.checkout)
+    );
+
+    if (!conflict) return roomNumber;
+  }
+
+  return null;
+}
+
+function updatePrice() {
+  const room = $("roomType").value;
+  const checkin = $("checkin").value;
+  const checkout = $("checkout").value;
+
+  if (!checkin || !checkout || checkout <= checkin) {
+    $("pricePreview").textContent = "Select valid dates";
+    return 0;
+  }
+
+  const nights = nightsBetween(checkin, checkout);
+  const total = nights * ROOM_PRICES[room];
+
+  $("pricePreview").textContent =
+    formatMoney(total) + " (" + nights + " nights)";
+
+  return total;
+}
+
+function showMessage(message, type = "success") {
+  const element = $("formMessage");
+  element.textContent = message;
+  element.className = "message " + type;
+  element.style.color = type === "error" ? "#c34848" : "#21875b";
+}
+
+function updateDashboard() {
+  const today = todayString();
+
+  const active = bookings.filter(isActiveBooking);
+
+  const occupied = new Set(
+    active
+      .filter(b => b.checkin <= today && today < b.checkout)
+      .map(b => b.roomNumber)
+  );
+
+  const upcoming = active.filter(b => b.checkin > today);
+
+  const revenue = active
+    .filter(b => b.payment === "Paid")
+    .reduce((sum, b) => sum + Number(b.amount), 0);
+
+  $("totalBookings").textContent = active.length;
+  $("occupiedRooms").textContent = occupied.size;
+  $("availableRooms").textContent = TOTAL_ROOMS - occupied.size;
+  $("totalRevenue").textContent = formatMoney(revenue);
+  $("upcomingBookings").textContent = upcoming.length;
+}
+
+function renderBookings() {
+  const table = $("bookingTable");
+  const search = $("search").value.trim().toLowerCase();
+
+  const filtered = bookings.filter(b =>
+    b.status !== "Cancelled" &&
+    (
+      b.name.toLowerCase().includes(search) ||
+      b.phone.includes(search) ||
+      b.id.toString().includes(search) ||
+      b.roomNumber.toLowerCase().includes(search)
+    )
+  );
+
+  if (!filtered.length) {
+    table.innerHTML =
+      '<tr><td colspan="10">No reservations found</td></tr>';
+  } else {
+    table.innerHTML = filtered.map(b => `
+      <tr>
+        <td>#${b.id}</td>
+        <td>${escapeHTML(b.name)}</td>
+        <td>${escapeHTML(b.phone)}</td>
+        <td>${escapeHTML(b.room)}</td>
+        <td>${escapeHTML(b.roomNumber)}</td>
+        <td>${escapeHTML(b.checkin)}</td>
+        <td>${escapeHTML(b.checkout)}</td>
+        <td>${formatMoney(b.amount)}</td>
+        <td>
+          <span class="${b.payment === "Paid" ? "paid" : "unpaid"}">
+            ${b.payment}
+          </span>
+        </td>
+        <td>
+          ${b.payment === "Unpaid"
+            ? `<button class="action-btn pay-btn" data-action="pay" data-id="${b.id}">Paid</button>`
+            : ""}
+          <button class="action-btn delete-btn"
+            data-action="delete" data-id="${b.id}">Cancel</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  updateDashboard();
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+// Reservation submission
+$("bookingForm").addEventListener("submit", function(event) {
+  event.preventDefault();
+
+  const name = $("guestName").value.trim();
+  const phone = $("phone").value.trim();
+  const email = $("email").value.trim();
+  const room = $("roomType").value;
+  const guests = $("guestCount").value;
+  const checkin = $("checkin").value;
+  const checkout = $("checkout").value;
+  const payment = $("payment").value;
+
+  if (!name) {
+    showMessage("Please enter the guest name.", "error");
+    return;
+  }
+
+  if (!/^[0-9]{10}$/.test(phone)) {
+    showMessage("Enter a valid 10-digit phone number.", "error");
+    return;
+  }
+
+  if (checkin < todayString()) {
+    showMessage("Check-in cannot be in the past.", "error");
+    return;
+  }
+
+  if (!checkin || !checkout || checkout <= checkin) {
+    showMessage("Check-out must be after check-in.", "error");
+    return;
+  }
+
+  const nights = nightsBetween(checkin, checkout);
+  const amount = nights * ROOM_PRICES[room];
+
+  const roomNumber = allocateRoom(room, checkin, checkout);
+
+  if (!roomNumber) {
+    showMessage("No " + room + " rooms available for these dates.", "error");
+    return;
+  }
+
+  const booking = {
+    id: Date.now(),
+    name,
+    phone,
+    email,
+    room,
+    roomNumber,
+    guests,
+    checkin,
+    checkout,
+    nights,
+    amount,
+    payment,
+    status: "Confirmed",
+    createdAt: new Date().toISOString()
+  };
+
+  bookings.push(booking);
+  saveBookings();
+  renderBookings();
+
+  this.reset();
+  $("checkin").min = todayString();
+  $("checkout").min = todayString();
+  $("pricePreview").textContent = formatMoney(ROOM_PRICES.Standard);
+
+  showMessage(
+    "Booking confirmed! Room " + roomNumber + " allocated successfully."
+  );
+});
+
+// Room gallery quick booking
+document.querySelectorAll(".book-room").forEach(button => {
+  button.addEventListener("click", () => {
+    $("roomType").value = button.dataset.room;
+    updatePrice();
+    $("booking").scrollIntoView({ behavior: "smooth" });
+  });
+});
+
+// Update estimated price when dates or room change
+["roomType", "checkin", "checkout"].forEach(id => {
+  $(id).addEventListener("change", () => {
+    if (id === "checkin") {
+      $("checkout").min = $("checkin").value || todayString();
+    }
+    updatePrice();
+  });
+});
+
+// Search guest records
+$("search").addEventListener("input", renderBookings);
+
+// Payment and cancellation actions
+$("bookingTable").addEventListener("click", event => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  const id = Number(button.dataset.id);
+  const booking = bookings.find(b => b.id === id);
+
+  if (!booking) return;
+
+  if (button.dataset.action === "pay") {
+    booking.payment = "Paid";
+    saveBookings();
+    renderBookings();
+  }
+
+  if (button.dataset.action === "delete") {
+    if (confirm("Cancel booking #" + id + "?")) {
+      booking.status = "Cancelled";
+      saveBookings();
+      renderBookings();
+    }
+  }
+});
+
+// CSV export
+$("exportBtn").addEventListener("click", () => {
+  const active = bookings.filter(isActiveBooking);
+
+  if (!active.length) {
+    alert("There are no reservations to export.");
+    return;
+  }
+
+  const headings = [
+    "Booking ID", "Guest Name", "Phone", "Email",
+    "Room Type", "Room Number", "Guests",
+    "Check-in", "Check-out", "Nights",
+    "Amount", "Payment", "Status"
+  ];
+
+  const rows = active.map(b => [
+    b.id, b.name, b.phone, b.email,
+    b.room, b.roomNumber, b.guests,
+    b.checkin, b.checkout, b.nights,
+    b.amount, b.payment, b.status
+  ]);
+
+  const csv = [headings, ...rows]
+    .map(row => row.map(value =>
+      '"' + String(value ?? "").replace(/"/g, '""') + '"'
+    ).join(","))
+    .join("\n");
+
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "ANK_Hotel_Guest_Records.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+// Dark mode
+$("themeToggle").addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+
+  const dark = document.body.classList.contains("dark");
+  $("themeToggle").textContent = dark ? "☀" : "☾";
+
+  localStorage.setItem("ankHotelDarkMode", dark ? "on" : "off");
+});
+
+if (localStorage.getItem("ankHotelDarkMode") === "on") {
+  document.body.classList.add("dark");
+  $("themeToggle").textContent = "☀";
+}
+
+// Set date restrictions
+$("checkin").min = todayString();
+$("checkout").min = todayString();
+
+// Initial display
+updatePrice();
+renderBookings();

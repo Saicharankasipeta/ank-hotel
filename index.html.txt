@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANK Luxury Hotel Management</title>
+<link rel="stylesheet" href="style.css">
+<script src="script.js" defer></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">ANK</div>
+    <div>
+      <h1>ANK Luxury Hotel</h1>
+      <p>Hotel Management System</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span>Administrator</span>
+    <button id="themeToggle" class="theme-btn">☾</button>
+  </div>
+</header>
+
+<nav class="navbar">
+  <a href="#dashboard">Dashboard</a>
+  <a href="#rooms">Rooms</a>
+  <a href="#booking">Reservations</a>
+  <a href="#guests">Guest Records</a>
+  <a href="#facilities">Facilities</a>
+  <a href="#offers">Offers</a>
+</nav>
+
+<main class="container">
+
+<section class="hero" id="dashboard">
+  <div class="hero-content">
+    <span class="eyebrow">WELCOME TO ANK</span>
+    <h2>Experience Luxury.<br>Enjoy Every Moment.</h2>
+    <p>Premium hospitality, beautiful rooms and unforgettable experiences.</p>
+    <a href="#booking" class="primary-link">Book Your Stay</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="heading">
+    <div>
+      <h2>Dashboard Overview</h2>
+      <p>Hotel performance at a glance</p>
+    </div>
+    <span class="status">● System Active</span>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">▦</div>
+      <p>Total Rooms</p>
+      <h3>40</h3>
+      <small>Hotel room capacity</small>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">▣</div>
+      <p>Total Reservations</p>
+      <h3 id="totalBookings">0</h3>
+      <small>All booking records</small>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⌂</div>
+      <p>Occupied Today</p>
+      <h3 id="occupiedRooms">0</h3>
+      <small>Rooms currently occupied</small>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✓</div>
+      <p>Available Today</p>
+      <h3 id="availableRooms">40</h3>
+      <small>Rooms available today</small>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">₹</div>
+      <p>Total Revenue</p>
+      <h3 id="totalRevenue">₹0</h3>
+      <small>Paid reservations</small>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">◷</div>
+      <p>Upcoming Bookings</p>
+      <h3 id="upcomingBookings">0</h3>
+      <small>Future reservations</small>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="rooms">
+  <div class="heading">
+    <div>
+      <h2>Our Luxury Rooms</h2>
+      <p>Choose your preferred accommodation</p>
+    </div>
+  </div>
+
+  <div class="room-grid">
+    <article class="room-card">
+      <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=900&q=85" alt="Standard room">
+      <div class="room-content">
+        <span class="tag">COMFORT STAY</span>
+        <h3>Standard Room</h3>
+        <p>Comfortable accommodation with modern amenities.</p>
+        <div class="room-bottom">
+          <strong>₹1,500 <small>/ night</small></strong>
+          <button class="book-room" data-room="Standard">Book Now</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="room-card">
+      <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=85" alt="Deluxe room">
+      <div class="room-content">
+        <span class="tag">POPULAR CHOICE</span>
+        <h3>Deluxe Room</h3>
+        <p>Spacious interiors and premium furniture.</p>
+        <div class="room-bottom">
+          <strong>₹2,500 <small>/ night</small></strong>
+          <button class="book-room" data-room="Deluxe">Book Now</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="room-card">
+      <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=85" alt="Luxury suite">
+      <div class="room-content">
+        <span class="tag">PREMIUM LUXURY</span>
+        <h3>Luxury Suite</h3>
+        <p>Elegant suite with spacious and luxurious interiors.</p>
+        <div class="room-bottom">
+          <strong>₹4,000 <small>/ night</small></strong>
+          <button class="book-room" data-room="Suite">Book Now</button>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="section" id="booking">
+  <div class="heading">
+    <div>
+      <h2>New Reservation</h2>
+      <p>Enter guest details to reserve a room</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <form id="bookingForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="guestName">Guest Name</label>
+          <input id="guestName" type="text" placeholder="Enter guest name" required>
+        </div>
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <input id="phone" type="tel" placeholder="10-digit phone number" pattern="[0-9]{10}" maxlength="10" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input id="email" type="email" placeholder="Enter email address">
+        </div>
+        <div class="form-group">
+          <label for="roomType">Room Category</label>
+          <select id="roomType" required>
+            <option value="Standard">Standard - ₹1,500</option>
+            <option value="Deluxe">Deluxe - ₹2,500</option>
+            <option value="Suite">Luxury Suite - ₹4,000</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="guestCount">Number of Guests</label>
+          <select id="guestCount">
+            <option>1</option>
+            <option selected>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="checkin">Check-in Date</label>
+          <input id="checkin" type="date" required>
+        </div>
+        <div class="form-group">
+          <label for="checkout">Check-out Date</label>
+          <input id="checkout" type="date" required>
+        </div>
+        <div class="form-group">
+          <label for="payment">Payment Status</label>
+          <select id="payment">
+            <option value="Paid">Paid</option>
+            <option value="Unpaid">Unpaid</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="price-box">
+        Estimated Amount: <strong id="pricePreview">₹1,500</strong>
+      </div>
+      <button type="submit" class="primary-btn">Confirm Reservation</button>
+      <p id="formMessage" class="message"></p>
+    </form>
+  </div>
+</section>
+
+<section class="section" id="guests">
+  <div class="heading">
+    <div>
+      <h2>Guest Records</h2>
+      <p>Manage hotel reservations and payments</p>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="Search guest name or phone...">
+    <button id="exportBtn" class="secondary-btn">Export CSV</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Booking ID</th>
+          <th>Guest</th>
+          <th>Phone</th>
+          <th>Room</th>
+          <th>Room No.</th>
+          <th>Check-in</th>
+          <th>Check-out</th>
+          <th>Amount</th>
+          <th>Payment</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="bookingTable">
+        <tr><td colspan="10">No reservations available</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section" id="facilities">
+  <div class="heading">
+    <div>
+      <h2>Hotel Facilities</h2>
+      <p>Enjoy our premium services</p>
+    </div>
+  </div>
+
+  <div class="facility-grid">
+    <div class="facility"><span>🏊</span><h3>Swimming Pool</h3><p>Relax and enjoy our pool.</p></div>
+    <div class="facility"><span>🍽</span><h3>Restaurant</h3><p>Enjoy delicious dining.</p></div>
+    <div class="facility"><span>✦</span><h3>Spa & Wellness</h3><p>Refresh your mind and body.</p></div>
+    <div class="facility"><span>♧</span><h3>Fitness Centre</h3><p>Modern fitness facilities.</p></div>
+    <div class="facility"><span>⌁</span><h3>Free Wi-Fi</h3><p>High-speed internet access.</p></div>
+    <div class="facility"><span>🅿</span><h3>Parking</h3><p>Safe parking for guests.</p></div>
+    <div class="facility"><span>♨</span><h3>Room Service</h3><p>Convenient guest service.</p></div>
+    <div class="facility"><span>❀</span><h3>Garden</h3><p>Beautiful relaxation space.</p></div>
+  </div>
+</section>
+
+<section class="section" id="offers">
+  <div class="offer">
+    <div>
+      <span class="eyebrow">SPECIAL OFFER</span>
+      <h2>Make Your Stay Special</h2>
+      <p>Enjoy premium hospitality and comfortable accommodation at ANK Luxury Hotel.</p>
+    </div>
+    <div class="discount">10% OFF</div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <h2>ANK Luxury Hotel</h2>
+  <p>Luxury | Comfort | Hospitality</p>
+  <p>ANK Hotel Management System - College Project</p>
+</footer>
+
+</body>
+</html>
